@@ -1,1 +1,2088 @@
-
+{
+  "__inputs": [
+    {
+      "name": null,
+      "label": null,
+      "description": "",
+      "type": "datasource",
+      "pluginId": "postgres",
+      "pluginName": "PostgreSQL"
+    }
+  ],
+  "__requires": [
+    {
+      "type": "grafana",
+      "id": "grafana",
+      "name": "Grafana",
+      "version": "7.3.6"
+    },
+    {
+      "type": "panel",
+      "id": "graph",
+      "name": "Graph",
+      "version": ""
+    },
+    {
+      "type": "datasource",
+      "id": "postgres",
+      "name": "PostgreSQL",
+      "version": "1.0.0"
+    }
+  ],
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": "-- Grafana --",
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "gnetId": null,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "datasource": null,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 16,
+      "title": "Hosts",
+      "type": "row"
+    },
+    {
+      "alert": {
+        "alertRuleTags": {},
+        "conditions": [
+          {
+            "evaluator": {
+              "params": [
+                98
+              ],
+              "type": "gt"
+            },
+            "operator": {
+              "type": "and"
+            },
+            "query": {
+              "params": [
+                "A",
+                "5m",
+                "now"
+              ]
+            },
+            "reducer": {
+              "params": [],
+              "type": "last"
+            },
+            "type": "query"
+          }
+        ],
+        "executionErrorState": "alerting",
+        "for": "1m",
+        "frequency": "1m",
+        "handler": 1,
+        "message": "The hosts listed below have a memory usage rate of over 98%!",
+        "name": "Hosts Memory Usage (over time) Alert",
+        "noDataState": "no_data",
+        "notifications": []
+      },
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": null,
+      "description": "This report displays memory usage rates for all hosts in the data source.",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {},
+          "links": []
+        },
+        "overrides": []
+      },
+      "fill": 1,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 1
+      },
+      "hiddenSeries": false,
+      "id": 4,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "rightSide": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null",
+      "options": {
+        "alertThreshold": true
+      },
+      "percentage": false,
+      "pluginVersion": "7.3.6",
+      "pointradius": 2,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "format": "time_series",
+          "group": [],
+          "hide": false,
+          "metricColumn": "none",
+          "rawQuery": true,
+          "rawSql": "-- This report returns for all hosts in the data source\n-- the cpu and memory usage rate over time.\n\n-- Memory usage\nSELECT DISTINCT\n    $__time(sub_query.time),\n    COALESCE ( host_name, MAX ( host_name ) over ( partition BY 1 ), '' ) AS host_name,\n    MEM_Usage\nFROM \n    (\n        SELECT\n            samples.host_id,\n            host_name,\n            samples.history_datetime AS time,\n            SUM ( COALESCE ( samples.memory_usage_percent, 0 ) * COALESCE ( samples.minutes_in_status, 0 ) ) /\n            SUM ( COALESCE ( samples.minutes_in_status, 0 ) ) AS MEM_Usage\n        FROM\n            (\n                SELECT history_datetime, host_id, memory_usage_percent, minutes_in_status\n                FROM v4_4_statistics_hosts_resources_usage_samples\n                WHERE host_status = 1\n            ) AS samples\n            INNER JOIN v4_4_configuration_history_hosts\n                ON \n                    (\n                        v4_4_configuration_history_hosts.host_id = samples.host_id\n                        AND delete_date ISNULL\n                    )   \n        WHERE\n            samples.history_datetime >= $__timeFrom()\n            AND samples.history_datetime < $__timeTo()\n            -- Here we get the latest hosts configuration\n            AND v4_4_configuration_history_hosts.history_id \n                IN \n                    (\n                        SELECT MAX ( a.history_id )\n                        FROM v4_4_configuration_history_hosts a\n                        GROUP BY a.host_id\n                    )\n        GROUP BY samples.host_id, host_name, history_datetime\n    ) AS sub_query\nORDER BY sub_query.time, MEM_Usage DESC",
+          "refId": "A",
+          "select": [
+            [
+              {
+                "params": [
+                  "value"
+                ],
+                "type": "column"
+              }
+            ]
+          ],
+          "timeColumn": "time",
+          "where": [
+            {
+              "name": "$__timeFilter",
+              "params": [],
+              "type": "macro"
+            }
+          ]
+        }
+      ],
+      "thresholds": [
+        {
+          "colorMode": "critical",
+          "fill": true,
+          "line": true,
+          "op": "gt",
+          "value": 98
+        }
+      ],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "Hosts Memory Usage (over time)",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "decimals": 1,
+          "format": "percent",
+          "label": null,
+          "logBase": 1,
+          "max": "100",
+          "min": "0",
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": false
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "alert": {
+        "alertRuleTags": {},
+        "conditions": [
+          {
+            "evaluator": {
+              "params": [
+                98
+              ],
+              "type": "gt"
+            },
+            "operator": {
+              "type": "and"
+            },
+            "query": {
+              "params": [
+                "A",
+                "5m",
+                "now"
+              ]
+            },
+            "reducer": {
+              "params": [],
+              "type": "last"
+            },
+            "type": "query"
+          }
+        ],
+        "executionErrorState": "alerting",
+        "for": "1m",
+        "frequency": "1m",
+        "handler": 1,
+        "message": "The hosts listed below have a CPU usage rate of over 98%!",
+        "name": "Hosts CPU Usage (over time) Alert",
+        "noDataState": "no_data",
+        "notifications": []
+      },
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": null,
+      "description": "This report displays CPU usage rates for all hosts in the data source.",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {},
+          "links": []
+        },
+        "overrides": []
+      },
+      "fill": 1,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 1
+      },
+      "hiddenSeries": false,
+      "id": 6,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "rightSide": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null",
+      "options": {
+        "alertThreshold": true
+      },
+      "percentage": false,
+      "pluginVersion": "7.3.6",
+      "pointradius": 2,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "format": "time_series",
+          "group": [],
+          "hide": false,
+          "metricColumn": "none",
+          "rawQuery": true,
+          "rawSql": "-- This report returns for all hosts in the data source\n-- the cpu and memory usage rate over time.\n\n-- CPU usage\nSELECT DISTINCT\n    $__time(sub_query.time),\n    COALESCE ( host_name, MAX ( host_name ) over ( partition BY 1 ), '' ) AS host_name,\n    CPU_Usage\nFROM \n    (\n        SELECT\n            samples.host_id,\n            host_name,\n            samples.history_datetime AS time,\n            SUM ( COALESCE ( samples.cpu_usage_percent, 0 ) * COALESCE ( samples.minutes_in_status, 0 ) ) /\n            SUM ( COALESCE ( samples.minutes_in_status, 0 ) ) AS CPU_Usage\n        FROM\n            (\n                SELECT history_datetime, host_id, cpu_usage_percent, minutes_in_status\n                FROM v4_4_statistics_hosts_resources_usage_samples\n                WHERE host_status = 1\n            ) AS samples\n            INNER JOIN v4_4_configuration_history_hosts\n                ON \n                    (\n                        v4_4_configuration_history_hosts.host_id = samples.host_id\n                        AND delete_date ISNULL\n                    )   \n        WHERE\n            samples.history_datetime >= $__timeFrom()\n            AND samples.history_datetime < $__timeTo()\n            -- Here we get the latest hosts configuration\n            AND v4_4_configuration_history_hosts.history_id \n                IN \n                    (\n                        SELECT MAX ( a.history_id )\n                        FROM v4_4_configuration_history_hosts a\n                        GROUP BY a.host_id\n                    )\n        GROUP BY samples.host_id, host_name, history_datetime\n    ) AS sub_query\nORDER BY sub_query.time, CPU_Usage DESC",
+          "refId": "A",
+          "select": [
+            [
+              {
+                "params": [
+                  "value"
+                ],
+                "type": "column"
+              }
+            ]
+          ],
+          "timeColumn": "time",
+          "where": [
+            {
+              "name": "$__timeFilter",
+              "params": [],
+              "type": "macro"
+            }
+          ]
+        }
+      ],
+      "thresholds": [
+        {
+          "colorMode": "critical",
+          "fill": true,
+          "line": true,
+          "op": "gt",
+          "value": 98
+        }
+      ],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "Hosts CPU Usage (over time)",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "decimals": 1,
+          "format": "percent",
+          "label": null,
+          "logBase": 1,
+          "max": "100",
+          "min": "0",
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": false
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "alert": {
+        "alertRuleTags": {},
+        "conditions": [
+          {
+            "evaluator": {
+              "params": [
+                0
+              ],
+              "type": "gt"
+            },
+            "operator": {
+              "type": "and"
+            },
+            "query": {
+              "params": [
+                "A",
+                "5m",
+                "now"
+              ]
+            },
+            "reducer": {
+              "params": [],
+              "type": "last"
+            },
+            "type": "query"
+          }
+        ],
+        "executionErrorState": "alerting",
+        "for": "1m",
+        "frequency": "1m",
+        "handler": 1,
+        "message": "The hosts listed below have transmitted dropped packets!",
+        "name": "Hosts Ethernet Interface Tx Dropped Packets (over time) Alert",
+        "noDataState": "no_data",
+        "notifications": []
+      },
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": null,
+      "description": "Transmitted total dropped packets of all hosts interfaces in the data source.",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {},
+          "links": []
+        },
+        "overrides": []
+      },
+      "fill": 1,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 9
+      },
+      "hiddenSeries": false,
+      "id": 25,
+      "legend": {
+        "alignAsTable": false,
+        "avg": false,
+        "current": false,
+        "hideEmpty": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "nullPointMode": "null",
+      "options": {
+        "alertThreshold": true
+      },
+      "percentage": false,
+      "pluginVersion": "7.3.6",
+      "pointradius": 2,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "format": "time_series",
+          "group": [],
+          "hide": false,
+          "metricColumn": "none",
+          "rawQuery": true,
+          "rawSql": "-- This query returns the Ethernet Interface \n-- Tx and Rx total dropped packets, over time.\n\nSELECT DISTINCT\n    time,\n    CONCAT \n    (\n        COALESCE ( interface_name, MAX ( interface_name ) over ( partition BY 1 ), '' ) || ' (', \n        COALESCE ( host_name, MAX ( host_name ) over ( partition BY 1 ), '' ) || ')'\n    ) AS interface_host_name,\n    AVG ( Tx_drop ) AS \"Tx. Drop\"\nFROM \n    (\n        SELECT DISTINCT\n            v4_4_configuration_history_hosts_interfaces.host_interface_id,\n            CASE\n                WHEN v4_4_configuration_history_hosts_interfaces.delete_date IS NULL\n                    THEN v4_4_configuration_history_hosts_interfaces.host_interface_name\n                ELSE v4_4_configuration_history_hosts_interfaces.host_interface_name\n            ||\n            '*'\n            END AS interface_name,\n            CASE\n                WHEN MAX (v4_4_configuration_history_hosts.delete_date) IS NULL\n                    THEN MAX (host_name)\n                ELSE MAX (host_name)\n            ||\n            '*'\n            END AS host_name,\n            statistics.history_datetime AS time,\n            AVG ( COALESCE ( transmitted_dropped_total_packets, 0 ) ) AS Tx_drop\n        FROM\n            (\n                SELECT history_datetime, host_interface_id, transmitted_dropped_total_packets \n                FROM v4_4_statistics_hosts_interfaces_resources_usage_samples\n            ) AS statistics\n            INNER JOIN \n            v4_4_configuration_history_hosts_interfaces\n                ON \n                    (\n                        v4_4_configuration_history_hosts_interfaces.host_interface_id =\n                        statistics.host_interface_id\n                    )\n            INNER JOIN \n            v4_4_configuration_history_hosts\n                ON\n                    (\n                        v4_4_configuration_history_hosts.host_id =\n                        v4_4_configuration_history_hosts_interfaces.host_id\n                    )\n        WHERE\n            -- Here we filter by the time range\n            history_datetime >= $__timeFrom()\n            AND history_datetime < $__timeTo()\n            AND v4_4_configuration_history_hosts_interfaces.history_id \n                IN \n                    (\n                        SELECT MAX ( a.history_id )\n                        FROM v4_4_configuration_history_hosts_interfaces AS a\n                        GROUP BY a.host_interface_id\n                    )\n            AND v4_4_configuration_history_hosts_interfaces.host_interface_id\n                IN \n                    (\n                        SELECT host_interface_id\n                        FROM v4_4_latest_configuration_hosts_interfaces\n                    )\n            AND v4_4_configuration_history_hosts_interfaces.host_interface_id \n                IN \n                    (\n                        SELECT c.host_interface_id\n                        FROM\n                            (\n                                SELECT history_datetime, host_interface_id, transmitted_dropped_total_packets\n                                FROM v4_4_statistics_hosts_interfaces_resources_usage_samples\n                            ) AS b\n                            INNER JOIN \n                            v4_4_configuration_history_hosts_interfaces c\n                                ON \n                                    ( \n                                        c.host_interface_id = \n                                        b.host_interface_id \n                                    )\n                            INNER JOIN \n                            (\n                                SELECT history_datetime, host_id, host_status \n                                FROM v4_4_statistics_hosts_resources_usage_samples\n                            ) AS samples_hourly_daily\n                                ON \n                                    (\n                                        samples_hourly_daily.history_datetime =\n                                        b.history_datetime\n                                    )\n                        WHERE\n                            -- Here we filter by active host only\n                            samples_hourly_daily.host_status = 1\n                            AND c.history_id \n                                IN \n                                    (\n                                        SELECT MAX ( d.history_id )\n                                        FROM v4_4_configuration_history_hosts_interfaces AS d\n                                        GROUP BY d.host_interface_id\n                                    )\n                        GROUP BY c.host_interface_id\n                        ORDER BY\n                                AVG ( COALESCE ( b.transmitted_dropped_total_packets, 0 ) ) \n                                DESC\n                    )\n        GROUP BY\n            v4_4_configuration_history_hosts_interfaces.host_interface_id,\n            interface_name,\n            host_name,\n            statistics.history_datetime\n    ) AS all_sub_queries\nGROUP BY \n    all_sub_queries.time, \n    interface_name,\n    host_name\nORDER BY all_sub_queries.time ASC",
+          "refId": "A",
+          "select": [
+            [
+              {
+                "params": [
+                  "value"
+                ],
+                "type": "column"
+              }
+            ]
+          ],
+          "timeColumn": "time",
+          "where": [
+            {
+              "name": "$__timeFilter",
+              "params": [],
+              "type": "macro"
+            }
+          ]
+        }
+      ],
+      "thresholds": [
+        {
+          "colorMode": "critical",
+          "fill": true,
+          "line": true,
+          "op": "gt",
+          "value": 0
+        }
+      ],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "Hosts Ethernet Interface Tx Dropped Packets (over time)",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "decimals": 1,
+          "format": "none",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": "0",
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": false
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "alert": {
+        "alertRuleTags": {},
+        "conditions": [
+          {
+            "evaluator": {
+              "params": [
+                0
+              ],
+              "type": "gt"
+            },
+            "operator": {
+              "type": "and"
+            },
+            "query": {
+              "params": [
+                "A",
+                "5m",
+                "now"
+              ]
+            },
+            "reducer": {
+              "params": [],
+              "type": "last"
+            },
+            "type": "query"
+          }
+        ],
+        "executionErrorState": "alerting",
+        "for": "1m",
+        "frequency": "1m",
+        "handler": 1,
+        "message": "The hosts listed below have received dropped packets!",
+        "name": "Hosts Ethernet Interface Tx Dropped Packets (over time) Alert",
+        "noDataState": "no_data",
+        "notifications": []
+      },
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": null,
+      "description": "Received total dropped packets of all hosts interfaces in the data source.",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {},
+          "links": []
+        },
+        "overrides": []
+      },
+      "fill": 1,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 9
+      },
+      "hiddenSeries": false,
+      "id": 27,
+      "legend": {
+        "alignAsTable": false,
+        "avg": false,
+        "current": false,
+        "hideEmpty": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "nullPointMode": "null",
+      "options": {
+        "alertThreshold": true
+      },
+      "percentage": false,
+      "pluginVersion": "7.3.6",
+      "pointradius": 2,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "format": "time_series",
+          "group": [],
+          "hide": false,
+          "metricColumn": "none",
+          "rawQuery": true,
+          "rawSql": "-- This query returns the Ethernet Interface \n-- Tx and Rx total dropped packets, over time.\n\nSELECT DISTINCT\n    time,\n    CONCAT \n    (\n        COALESCE ( interface_name, MAX ( interface_name ) over ( partition BY 1 ), '' ) || ' (', \n        COALESCE ( host_name, MAX ( host_name ) over ( partition BY 1 ), '' ) || ')'\n    ) AS interface_host_name,\n    AVG ( Rx_drop ) AS \"Rx. Drop\"\nFROM \n    (\n        SELECT DISTINCT\n            v4_4_configuration_history_hosts_interfaces.host_interface_id,\n            CASE\n                WHEN v4_4_configuration_history_hosts_interfaces.delete_date IS NULL\n                    THEN v4_4_configuration_history_hosts_interfaces.host_interface_name\n                ELSE v4_4_configuration_history_hosts_interfaces.host_interface_name\n            ||\n            '*'\n            END AS interface_name,\n            CASE\n                WHEN MAX (v4_4_configuration_history_hosts.delete_date) IS NULL\n                    THEN MAX (host_name)\n                ELSE MAX (host_name)\n            ||\n            '*'\n            END AS host_name,\n            statistics.history_datetime AS time,\n            AVG ( COALESCE ( received_dropped_total_packets, 0 ) ) AS Rx_drop\n        FROM\n            (\n                SELECT history_datetime, host_interface_id, received_dropped_total_packets \n                FROM v4_4_statistics_hosts_interfaces_resources_usage_samples\n            ) AS statistics\n            INNER JOIN \n            v4_4_configuration_history_hosts_interfaces\n                ON \n                    (\n                        v4_4_configuration_history_hosts_interfaces.host_interface_id =\n                        statistics.host_interface_id\n                    )\n            INNER JOIN \n            v4_4_configuration_history_hosts\n                ON\n                    (\n                        v4_4_configuration_history_hosts.host_id =\n                        v4_4_configuration_history_hosts_interfaces.host_id\n                    )\n        WHERE\n            -- Here we filter by the time range\n            history_datetime >= $__timeFrom()\n            AND history_datetime < $__timeTo()\n            AND v4_4_configuration_history_hosts_interfaces.history_id \n                IN \n                    (\n                        SELECT MAX ( a.history_id )\n                        FROM v4_4_configuration_history_hosts_interfaces AS a\n                        GROUP BY a.host_interface_id\n                    )\n            AND v4_4_configuration_history_hosts_interfaces.host_interface_id\n                IN \n                    (\n                        SELECT host_interface_id\n                        FROM v4_4_latest_configuration_hosts_interfaces\n                    )\n            AND v4_4_configuration_history_hosts_interfaces.host_interface_id \n                IN \n                    (\n                        SELECT c.host_interface_id\n                        FROM\n                            (\n                                SELECT history_datetime, host_interface_id, received_dropped_total_packets\n                                FROM v4_4_statistics_hosts_interfaces_resources_usage_samples\n                            ) AS b\n                            INNER JOIN \n                            v4_4_configuration_history_hosts_interfaces c\n                                ON \n                                    ( \n                                        c.host_interface_id = \n                                        b.host_interface_id \n                                    )\n                            INNER JOIN \n                            (\n                                SELECT history_datetime, host_id, host_status \n                                FROM v4_4_statistics_hosts_resources_usage_samples\n                            ) AS samples_hourly_daily\n                                ON \n                                    (\n                                        samples_hourly_daily.history_datetime =\n                                        b.history_datetime\n                                    )\n                        WHERE\n                            -- Here we filter by active host only\n                            samples_hourly_daily.host_status = 1\n                            AND c.history_id \n                                IN \n                                    (\n                                        SELECT MAX ( d.history_id )\n                                        FROM v4_4_configuration_history_hosts_interfaces AS d\n                                        GROUP BY d.host_interface_id\n                                    )\n                        GROUP BY c.host_interface_id\n                        ORDER BY\n                                AVG ( COALESCE ( b.received_dropped_total_packets, 0 ) ) \n                                DESC\n                    )\n        GROUP BY\n            v4_4_configuration_history_hosts_interfaces.host_interface_id,\n            interface_name,\n            host_name,\n            statistics.history_datetime\n    ) AS all_sub_queries\nGROUP BY \n    all_sub_queries.time, \n    interface_name,\n    host_name\nORDER BY all_sub_queries.time ASC",
+          "refId": "A",
+          "select": [
+            [
+              {
+                "params": [
+                  "value"
+                ],
+                "type": "column"
+              }
+            ]
+          ],
+          "timeColumn": "time",
+          "where": [
+            {
+              "name": "$__timeFilter",
+              "params": [],
+              "type": "macro"
+            }
+          ]
+        }
+      ],
+      "thresholds": [
+        {
+          "colorMode": "critical",
+          "fill": true,
+          "line": true,
+          "op": "gt",
+          "value": 0
+        }
+      ],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "Hosts Ethernet Interface Tx Dropped Packets (over time)",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "decimals": 1,
+          "format": "none",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": "0",
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": false
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "alert": {
+        "alertRuleTags": {},
+        "conditions": [
+          {
+            "evaluator": {
+              "params": [
+                95
+              ],
+              "type": "gt"
+            },
+            "operator": {
+              "type": "and"
+            },
+            "query": {
+              "params": [
+                "A",
+                "5m",
+                "now"
+              ]
+            },
+            "reducer": {
+              "params": [],
+              "type": "last"
+            },
+            "type": "query"
+          }
+        ],
+        "executionErrorState": "alerting",
+        "for": "1m",
+        "frequency": "1m",
+        "handler": 1,
+        "message": "The hosts listed below have a unplanned downtime rate of over 95%!",
+        "name": "Host Unplanned Downtime Alert",
+        "noDataState": "no_data",
+        "notifications": []
+      },
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": null,
+      "description": "This report displays the unplanned downtime for all hosts in the data source.",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {},
+          "unit": "percentunit"
+        },
+        "overrides": []
+      },
+      "fill": 1,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 17
+      },
+      "hiddenSeries": false,
+      "id": 20,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "nullPointMode": "null",
+      "options": {
+        "alertThreshold": true
+      },
+      "percentage": false,
+      "pluginVersion": "7.3.6",
+      "pointradius": 2,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "format": "time_series",
+          "group": [],
+          "metricColumn": "none",
+          "rawQuery": true,
+          "rawSql": "SELECT\n    $__time(history_datetime),\n    COALESCE ( host_name, MAX ( host_name ) over ( partition BY 1 ), '' ) AS host_name,\n    SUM \n        (\n            CASE\n                WHEN host_status = 3\n                    THEN COALESCE ( samples.minutes_in_status, 0 )\n                ELSE 0\n            END\n        ) / SUM ( samples.minutes_in_status ) AS \"Unplanned Downtime\"\nFROM \n    v4_4_statistics_hosts_resources_usage_samples AS samples\n    INNER JOIN v4_4_configuration_history_hosts\n        ON \n            (\n                v4_4_configuration_history_hosts.host_id = samples.host_id\n                AND delete_date ISNULL\n                AND v4_4_configuration_history_hosts.history_id\n                    IN\n                        (\n                            SELECT MAX (history_id)\n                            FROM v4_4_configuration_history_hosts\n                            GROUP BY host_id\n                        )\n            )\nWHERE\n    history_datetime >= $__timeFrom()\n    AND history_datetime < $__timeTo()\nGROUP BY history_datetime, host_name",
+          "refId": "A",
+          "select": [
+            [
+              {
+                "params": [
+                  "value"
+                ],
+                "type": "column"
+              }
+            ]
+          ],
+          "timeColumn": "time",
+          "where": [
+            {
+              "name": "$__timeFilter",
+              "params": [],
+              "type": "macro"
+            }
+          ]
+        }
+      ],
+      "thresholds": [
+        {
+          "colorMode": "critical",
+          "fill": true,
+          "line": true,
+          "op": "gt",
+          "value": 95
+        }
+      ],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "Host Unplanned Downtime",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "decimals": 1,
+          "format": "percentunit",
+          "label": "",
+          "logBase": 1,
+          "max": "1",
+          "min": "0",
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "datasource": null,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 25
+      },
+      "id": 14,
+      "title": "Virtual Machines",
+      "type": "row"
+    },
+    {
+      "alert": {
+        "alertRuleTags": {},
+        "conditions": [
+          {
+            "evaluator": {
+              "params": [
+                98
+              ],
+              "type": "gt"
+            },
+            "operator": {
+              "type": "and"
+            },
+            "query": {
+              "params": [
+                "A",
+                "5m",
+                "now"
+              ]
+            },
+            "reducer": {
+              "params": [],
+              "type": "last"
+            },
+            "type": "query"
+          }
+        ],
+        "executionErrorState": "alerting",
+        "for": "1m",
+        "frequency": "1m",
+        "handler": 1,
+        "message": "The virtual machines listed below have a memory usage rate of over 98%!",
+        "name": "Virtual Machines Memory Usage (over time) Alert",
+        "noDataState": "no_data",
+        "notifications": []
+      },
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": null,
+      "description": "This report displays memory usage rates for all virtual machines in the data source.",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {},
+          "links": []
+        },
+        "overrides": []
+      },
+      "fill": 1,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 26
+      },
+      "hiddenSeries": false,
+      "id": 8,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "rightSide": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null",
+      "options": {
+        "alertThreshold": true
+      },
+      "percentage": false,
+      "pluginVersion": "7.3.6",
+      "pointradius": 2,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "format": "time_series",
+          "group": [],
+          "hide": false,
+          "metricColumn": "none",
+          "rawQuery": true,
+          "rawSql": "-- This report returns for all vms in the data source\n-- the cpu and memory usage rate over time.\n\n-- Memory usage\nSELECT DISTINCT\n    $__time(sub_query.time),\n    COALESCE ( vm_name, MAX ( vm_name ) over ( partition BY 1 ), '' ) AS vm_name,\n    MEM_Usage\nFROM \n    (\n        SELECT\n            samples.vm_id,\n            vm_name,\n            samples.history_datetime AS time,\n            SUM ( COALESCE ( samples.memory_usage_percent, 0 ) * COALESCE ( samples.minutes_in_status, 0 ) ) /\n            SUM ( COALESCE ( samples.minutes_in_status, 0 ) ) AS MEM_Usage\n        FROM\n            (\n                SELECT history_datetime, vm_id, memory_usage_percent, minutes_in_status\n                FROM v4_4_statistics_vms_resources_usage_samples\n                WHERE vm_status = 1\n            ) AS samples\n            INNER JOIN v4_4_configuration_history_vms\n                ON \n                    (\n                        v4_4_configuration_history_vms.vm_id = samples.vm_id\n                        AND delete_date ISNULL\n                    )   \n        WHERE\n            samples.history_datetime >= $__timeFrom()\n            AND samples.history_datetime < $__timeTo()\n            -- Here we get the latest vms configuration\n            AND v4_4_configuration_history_vms.history_id \n                IN \n                    (\n                        SELECT MAX ( a.history_id )\n                        FROM v4_4_configuration_history_vms a\n                        GROUP BY a.vm_id\n                    )\n        GROUP BY samples.vm_id, vm_name, history_datetime\n    ) AS sub_query\nORDER BY sub_query.time, MEM_Usage DESC",
+          "refId": "A",
+          "select": [
+            [
+              {
+                "params": [
+                  "value"
+                ],
+                "type": "column"
+              }
+            ]
+          ],
+          "timeColumn": "time",
+          "where": [
+            {
+              "name": "$__timeFilter",
+              "params": [],
+              "type": "macro"
+            }
+          ]
+        }
+      ],
+      "thresholds": [
+        {
+          "colorMode": "critical",
+          "fill": true,
+          "line": true,
+          "op": "gt",
+          "value": 98
+        }
+      ],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "Virtual Machines Memory Usage (over time)",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "decimals": 1,
+          "format": "percent",
+          "label": null,
+          "logBase": 1,
+          "max": "100",
+          "min": "0",
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": false
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "alert": {
+        "alertRuleTags": {},
+        "conditions": [
+          {
+            "evaluator": {
+              "params": [
+                98
+              ],
+              "type": "gt"
+            },
+            "operator": {
+              "type": "and"
+            },
+            "query": {
+              "params": [
+                "A",
+                "5m",
+                "now"
+              ]
+            },
+            "reducer": {
+              "params": [],
+              "type": "last"
+            },
+            "type": "query"
+          }
+        ],
+        "executionErrorState": "alerting",
+        "for": "1m",
+        "frequency": "1m",
+        "handler": 1,
+        "message": "The virtual machines listed below have a CPU usage rate of over 98%!",
+        "name": "Virtual Machines CPU Usage (over time) Alert",
+        "noDataState": "no_data",
+        "notifications": []
+      },
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": null,
+      "description": "This report displays CPU usage rates for all virtual machines in the data source.",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {},
+          "links": []
+        },
+        "overrides": []
+      },
+      "fill": 1,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 26
+      },
+      "hiddenSeries": false,
+      "id": 10,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "rightSide": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null",
+      "options": {
+        "alertThreshold": true
+      },
+      "percentage": false,
+      "pluginVersion": "7.3.6",
+      "pointradius": 2,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "format": "time_series",
+          "group": [],
+          "hide": false,
+          "metricColumn": "none",
+          "rawQuery": true,
+          "rawSql": "-- This report returns for all vms in the data source\n-- the cpu and memory usage rate over time.\n\n-- CPU usage\nSELECT DISTINCT\n    $__time(sub_query.time),\n    COALESCE ( vm_name, MAX ( vm_name ) over ( partition BY 1 ), '' ) AS vm_name,\n    CPU_Usage\nFROM \n    (\n        SELECT\n            samples.vm_id,\n            vm_name,\n            samples.history_datetime AS time,\n            SUM ( COALESCE ( samples.cpu_usage_percent, 0 ) * COALESCE ( samples.minutes_in_status, 0 ) ) /\n            SUM ( COALESCE ( samples.minutes_in_status, 0 ) ) AS CPU_Usage\n        FROM\n            (\n                SELECT history_datetime, vm_id, cpu_usage_percent, minutes_in_status\n                FROM v4_4_statistics_vms_resources_usage_samples\n                WHERE vm_status = 1\n            ) AS samples\n            INNER JOIN v4_4_configuration_history_vms\n                ON \n                    (\n                        v4_4_configuration_history_vms.vm_id = samples.vm_id\n                        AND delete_date ISNULL\n                    )   \n        WHERE\n            samples.history_datetime >= $__timeFrom()\n            AND samples.history_datetime < $__timeTo()\n            -- Here we get the latest vms configuration\n            AND v4_4_configuration_history_vms.history_id \n                IN \n                    (\n                        SELECT MAX ( a.history_id )\n                        FROM v4_4_configuration_history_vms a\n                        GROUP BY a.vm_id\n                    )\n        GROUP BY samples.vm_id, vm_name, history_datetime\n    ) AS sub_query\nORDER BY sub_query.time, CPU_Usage DESC",
+          "refId": "A",
+          "select": [
+            [
+              {
+                "params": [
+                  "value"
+                ],
+                "type": "column"
+              }
+            ]
+          ],
+          "timeColumn": "time",
+          "where": [
+            {
+              "name": "$__timeFilter",
+              "params": [],
+              "type": "macro"
+            }
+          ]
+        }
+      ],
+      "thresholds": [
+        {
+          "colorMode": "critical",
+          "fill": true,
+          "line": true,
+          "op": "gt",
+          "value": 98
+        }
+      ],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "Virtual Machines CPU Usage (over time)",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "decimals": 1,
+          "format": "percent",
+          "label": null,
+          "logBase": 1,
+          "max": "100",
+          "min": "0",
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": false
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "alert": {
+        "alertRuleTags": {},
+        "conditions": [
+          {
+            "evaluator": {
+              "params": [
+                0
+              ],
+              "type": "gt"
+            },
+            "operator": {
+              "type": "and"
+            },
+            "query": {
+              "params": [
+                "A",
+                "5m",
+                "now"
+              ]
+            },
+            "reducer": {
+              "params": [],
+              "type": "last"
+            },
+            "type": "query"
+          }
+        ],
+        "executionErrorState": "alerting",
+        "for": "1m",
+        "frequency": "1m",
+        "handler": 1,
+        "message": "The virtual machines listed below have transmitted dropped packets!",
+        "name": "Virtual Machines Ethernet Interface Tx Dropped Packets (over time) Alert",
+        "noDataState": "no_data",
+        "notifications": []
+      },
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": null,
+      "description": "Transmitted total dropped packets of all virtual machine interfaces in the data source.",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {},
+          "links": []
+        },
+        "overrides": []
+      },
+      "fill": 1,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 34
+      },
+      "hiddenSeries": false,
+      "id": 29,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "rightSide": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "nullPointMode": "null",
+      "options": {
+        "alertThreshold": true
+      },
+      "percentage": false,
+      "pluginVersion": "7.3.6",
+      "pointradius": 2,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "format": "time_series",
+          "group": [],
+          "hide": false,
+          "metricColumn": "none",
+          "rawQuery": true,
+          "rawSql": "-- This query returns the VM Ethernet Interface \n-- Tx and Rx total dropped packets, over time.\n\nSELECT DISTINCT\n    $__time(all_sub_queries.time),\n    CONCAT\n\t  (\n\t      COALESCE ( interface_name, MAX ( interface_name ) over ( partition BY 1 ), '' ) || ' (', \n\t      COALESCE ( vm_name, MAX ( vm_name ) over ( partition BY 1 ), '' ) || ')'\n\t  ) AS disk_and_vm_name,\n    AVG ( Tx_drop ) AS \"Tx. Drop\"\nFROM \n    (\n        SELECT v4_4_configuration_history_vms_interfaces.vm_interface_id,\n            CASE\n                WHEN v4_4_configuration_history_vms_interfaces.delete_date IS NULL\n                    THEN v4_4_configuration_history_vms_interfaces.vm_interface_name\n                ELSE v4_4_configuration_history_vms_interfaces.vm_interface_name\n            ||\n            '*'\n            END AS interface_name,\n            CASE\n                WHEN MAX (v4_4_configuration_history_vms.delete_date) IS NULL\n                    THEN MAX (vm_name)\n                ELSE MAX (vm_name)\n            ||\n            '*'\n            END AS vm_name,\n            history_datetime AS time,\n            AVG ( COALESCE ( transmitted_dropped_total_packets, 0 ) ) AS Tx_drop\n        FROM \n            (    \n                SELECT history_datetime, vm_interface_id, transmitted_dropped_total_packets\n                FROM v4_4_statistics_vms_interfaces_resources_usage_samples\n            ) AS statistics\n            INNER JOIN \n            v4_4_configuration_history_vms_interfaces\n                ON \n                    (\n                        v4_4_configuration_history_vms_interfaces.vm_interface_id =\n                        statistics.vm_interface_id\n                    )\n\t\t        INNER JOIN v4_4_configuration_history_vms_devices\n\t\t            ON\n\t\t                (\n\t\t\t\t\t              v4_4_configuration_history_vms_devices.device_id =\n\t\t\t\t\t\t            statistics.vm_interface_id\n\t\t\t\t\t\t            AND v4_4_configuration_history_vms_devices.type = 'interface'\n\t\t\t\t\t          )\n\t\t        INNER JOIN \n\t\t        v4_4_configuration_history_vms\n\t\t            ON\n\t\t                (\n\t\t\t\t\t              v4_4_configuration_history_vms.vm_id = \n\t\t\t\t\t\t            v4_4_configuration_history_vms_devices.vm_id\n\t\t\t\t\t          )\n        WHERE \n            -- Here we filter by the time range\n            history_datetime >= $__timeFrom()\n            AND history_datetime < $__timeTo()\n            -- Here we get the latest vm interfaces configuration\n            AND v4_4_configuration_history_vms_interfaces.history_id \n                IN \n                    (\n                        SELECT MAX ( a.history_id )\n                        FROM v4_4_configuration_history_vms_interfaces AS a\n                        GROUP BY a.vm_interface_id\n                    )\n            AND v4_4_configuration_history_vms_interfaces.vm_interface_id \n                IN \n                    (\n                        SELECT c.vm_interface_id\n                        FROM     \n                            (\n                                SELECT history_datetime, vm_interface_id, transmitted_dropped_total_packets\n                                FROM v4_4_statistics_vms_interfaces_resources_usage_samples\n                            ) AS b\n                            INNER JOIN \n                            v4_4_configuration_history_vms_interfaces AS c\n                                ON \n                                    (\n                                        c.vm_interface_id = \n                                        b.vm_interface_id\n                                    )\n                            INNER JOIN \n                            (\n                                SELECT history_datetime, vm_configuration_version, vm_status\n                                FROM v4_4_statistics_vms_resources_usage_samples\n                            ) AS d\n                                ON \n                                    (\n                                        d.vm_configuration_version =\n                                        c.vm_configuration_version\n                                        AND d.history_datetime =\n                                        b.history_datetime\n                                    )\n                        WHERE\n                            -- Here we filter by active vm only\n                            d.vm_status = 1\n                            AND c.vm_interface_id \n                                IN \n                                    (\n                                        SELECT device_id\n                                        FROM v4_4_configuration_history_vms_devices\n                                        WHERE \n                                            create_date < $__timeTo()\n                                            AND ( delete_date > $__timeFrom() OR delete_date IS NULL )\n                                            -- Here we get the latest vm devices configuration\n                                            AND history_id \n                                                IN \n                                                    (\n                                                        SELECT MAX ( a.history_id )\n                                                        FROM v4_4_configuration_history_vms_devices AS a\n                                                        GROUP BY \n                                                            a.vm_id,\n                                                            a.device_id\n                                                    )\n                                    )\n                            AND c.history_id \n                                IN \n                                    (\n                                        SELECT MAX ( d.history_id )\n                                        FROM v4_4_configuration_history_vms_interfaces AS d\n                                        GROUP BY d.vm_interface_id\n                                    )\n                        GROUP BY c.vm_interface_id\n                        ORDER BY\n                            AVG ( COALESCE ( b.transmitted_dropped_total_packets, 0 ) ) \n                            DESC\n                    )\n        GROUP BY\n            v4_4_configuration_history_vms_interfaces.vm_interface_id,\n            interface_name,\n            vm_name,\n            history_datetime\n    ) AS all_sub_queries\nGROUP BY \n    all_sub_queries.time, \n    interface_name,\n    vm_name\nORDER BY all_sub_queries.time ASC",
+          "refId": "A",
+          "select": [
+            [
+              {
+                "params": [
+                  "value"
+                ],
+                "type": "column"
+              }
+            ]
+          ],
+          "timeColumn": "time",
+          "where": [
+            {
+              "name": "$__timeFilter",
+              "params": [],
+              "type": "macro"
+            }
+          ]
+        }
+      ],
+      "thresholds": [
+        {
+          "colorMode": "critical",
+          "fill": true,
+          "line": true,
+          "op": "gt",
+          "value": 0
+        }
+      ],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "Virtual Machines Ethernet Interface Tx Dropped Packets (over time) ",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "decimals": 1,
+          "format": "none",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": "0",
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": false
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "alert": {
+        "alertRuleTags": {},
+        "conditions": [
+          {
+            "evaluator": {
+              "params": [
+                0
+              ],
+              "type": "gt"
+            },
+            "operator": {
+              "type": "and"
+            },
+            "query": {
+              "params": [
+                "A",
+                "5m",
+                "now"
+              ]
+            },
+            "reducer": {
+              "params": [],
+              "type": "last"
+            },
+            "type": "query"
+          }
+        ],
+        "executionErrorState": "alerting",
+        "for": "1m",
+        "frequency": "1m",
+        "handler": 1,
+        "message": "The virtual machines listed below have received dropped packets!",
+        "name": "Virtual Machines Ethernet Interface Rx Dropped Packets (over time) Alert",
+        "noDataState": "no_data",
+        "notifications": []
+      },
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": null,
+      "description": "Received total dropped packets of all virtual machine interfaces in the data source.",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {},
+          "links": []
+        },
+        "overrides": []
+      },
+      "fill": 1,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 34
+      },
+      "hiddenSeries": false,
+      "id": 30,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "rightSide": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "nullPointMode": "null",
+      "options": {
+        "alertThreshold": true
+      },
+      "percentage": false,
+      "pluginVersion": "7.3.6",
+      "pointradius": 2,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "format": "time_series",
+          "group": [],
+          "hide": false,
+          "metricColumn": "none",
+          "rawQuery": true,
+          "rawSql": "-- This query returns the VM Ethernet Interface \n-- Tx and Rx total dropped packets, over time.\n\nSELECT DISTINCT\n    $__time(all_sub_queries.time),\n    CONCAT\n\t  (\n\t      COALESCE ( interface_name, MAX ( interface_name ) over ( partition BY 1 ), '' ) || ' (', \n\t      COALESCE ( vm_name, MAX ( vm_name ) over ( partition BY 1 ), '' ) || ')'\n\t  ) AS disk_and_vm_name,\n    AVG ( Rx_drop ) AS \"Rx. Drop\"\nFROM \n    (\n        SELECT v4_4_configuration_history_vms_interfaces.vm_interface_id,\n            CASE\n                WHEN v4_4_configuration_history_vms_interfaces.delete_date IS NULL\n                    THEN v4_4_configuration_history_vms_interfaces.vm_interface_name\n                ELSE v4_4_configuration_history_vms_interfaces.vm_interface_name\n            ||\n            '*'\n            END AS interface_name,\n            CASE\n                WHEN MAX (v4_4_configuration_history_vms.delete_date) IS NULL\n                    THEN MAX (vm_name)\n                ELSE MAX (vm_name)\n            ||\n            '*'\n            END AS vm_name,\n            history_datetime AS time,\n            AVG ( COALESCE ( received_dropped_total_packets, 0 ) ) AS Rx_drop\n        FROM \n            (    \n                SELECT history_datetime, vm_interface_id, received_dropped_total_packets\n                FROM v4_4_statistics_vms_interfaces_resources_usage_samples\n            ) AS statistics\n            INNER JOIN \n            v4_4_configuration_history_vms_interfaces\n                ON \n                    (\n                        v4_4_configuration_history_vms_interfaces.vm_interface_id =\n                        statistics.vm_interface_id\n                    )\n\t\t        INNER JOIN v4_4_configuration_history_vms_devices\n\t\t            ON\n\t\t                (\n\t\t\t\t\t              v4_4_configuration_history_vms_devices.device_id =\n\t\t\t\t\t\t            statistics.vm_interface_id\n\t\t\t\t\t\t            AND v4_4_configuration_history_vms_devices.type = 'interface'\n\t\t\t\t\t          )\n\t\t        INNER JOIN \n\t\t        v4_4_configuration_history_vms\n\t\t            ON\n\t\t                (\n\t\t\t\t\t              v4_4_configuration_history_vms.vm_id = \n\t\t\t\t\t\t            v4_4_configuration_history_vms_devices.vm_id\n\t\t\t\t\t          )\n        WHERE \n            -- Here we filter by the time range\n            history_datetime >= $__timeFrom()\n            AND history_datetime < $__timeTo()\n            -- Here we get the latest vm interfaces configuration\n            AND v4_4_configuration_history_vms_interfaces.history_id \n                IN \n                    (\n                        SELECT MAX ( a.history_id )\n                        FROM v4_4_configuration_history_vms_interfaces AS a\n                        GROUP BY a.vm_interface_id\n                    )\n            AND v4_4_configuration_history_vms_interfaces.vm_interface_id \n                IN \n                    (\n                        SELECT c.vm_interface_id\n                        FROM     \n                            (\n                                SELECT history_datetime, vm_interface_id, received_dropped_total_packets\n                                FROM v4_4_statistics_vms_interfaces_resources_usage_samples\n                            ) AS b\n                            INNER JOIN \n                            v4_4_configuration_history_vms_interfaces AS c\n                                ON \n                                    (\n                                        c.vm_interface_id = \n                                        b.vm_interface_id\n                                    )\n                            INNER JOIN \n                            (\n                                SELECT history_datetime, vm_configuration_version, vm_status\n                                FROM v4_4_statistics_vms_resources_usage_samples\n                            ) AS d\n                                ON \n                                    (\n                                        d.vm_configuration_version =\n                                        c.vm_configuration_version\n                                        AND d.history_datetime =\n                                        b.history_datetime\n                                    )\n                        WHERE\n                            -- Here we filter by active vm only\n                            d.vm_status = 1\n                            AND c.vm_interface_id \n                                IN \n                                    (\n                                        SELECT device_id\n                                        FROM v4_4_configuration_history_vms_devices\n                                        WHERE \n                                            create_date < $__timeTo()\n                                            AND ( delete_date > $__timeFrom() OR delete_date IS NULL )\n                                            -- Here we get the latest vm devices configuration\n                                            AND history_id \n                                                IN \n                                                    (\n                                                        SELECT MAX ( a.history_id )\n                                                        FROM v4_4_configuration_history_vms_devices AS a\n                                                        GROUP BY \n                                                            a.vm_id,\n                                                            a.device_id\n                                                    )\n                                    )\n                            AND c.history_id \n                                IN \n                                    (\n                                        SELECT MAX ( d.history_id )\n                                        FROM v4_4_configuration_history_vms_interfaces AS d\n                                        GROUP BY d.vm_interface_id\n                                    )\n                        GROUP BY c.vm_interface_id\n                        ORDER BY\n                            AVG ( COALESCE ( b.received_dropped_total_packets, 0 ) )\n                            DESC\n                    )\n        GROUP BY\n            v4_4_configuration_history_vms_interfaces.vm_interface_id,\n            interface_name,\n            vm_name,\n            history_datetime\n    ) AS all_sub_queries\nGROUP BY \n    all_sub_queries.time, \n    interface_name,\n    vm_name\nORDER BY all_sub_queries.time ASC",
+          "refId": "A",
+          "select": [
+            [
+              {
+                "params": [
+                  "value"
+                ],
+                "type": "column"
+              }
+            ]
+          ],
+          "timeColumn": "time",
+          "where": [
+            {
+              "name": "$__timeFilter",
+              "params": [],
+              "type": "macro"
+            }
+          ]
+        }
+      ],
+      "thresholds": [
+        {
+          "colorMode": "critical",
+          "fill": true,
+          "line": true,
+          "op": "gt",
+          "value": 0
+        }
+      ],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "Virtual Machines Ethernet Interface Rx Dropped Packets (over time) ",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "decimals": 1,
+          "format": "none",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": "0",
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": false
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "alert": {
+        "alertRuleTags": {},
+        "conditions": [
+          {
+            "evaluator": {
+              "params": [
+                98
+              ],
+              "type": "gt"
+            },
+            "operator": {
+              "type": "and"
+            },
+            "query": {
+              "params": [
+                "A",
+                "5m",
+                "now"
+              ]
+            },
+            "reducer": {
+              "params": [],
+              "type": "last"
+            },
+            "type": "query"
+          }
+        ],
+        "executionErrorState": "alerting",
+        "for": "1m",
+        "frequency": "1m",
+        "handler": 1,
+        "message": "The virtual machines listed below have a unplanned downtime rate of over 95%!",
+        "name": "Virtual Machines Unplanned Downtime Alert",
+        "noDataState": "no_data",
+        "notifications": []
+      },
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": null,
+      "description": "This report displays the unplanned downtime for all virtual machines in the data source.",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {},
+          "unit": "percentunit"
+        },
+        "overrides": []
+      },
+      "fill": 1,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 42
+      },
+      "hiddenSeries": false,
+      "id": 21,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "nullPointMode": "null",
+      "options": {
+        "alertThreshold": true
+      },
+      "percentage": false,
+      "pluginVersion": "7.3.6",
+      "pointradius": 2,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "format": "time_series",
+          "group": [],
+          "metricColumn": "none",
+          "rawQuery": true,
+          "rawSql": "SELECT\n    $__time(history_datetime),\n    COALESCE ( vm_name, MAX ( vm_name ) over ( partition BY 1 ), '' ) AS vm_name,\n    SUM \n        (\n            CASE\n                WHEN vm_status = 3\n                    THEN COALESCE ( samples.minutes_in_status, 0 )\n                ELSE 0\n            END\n        ) / SUM ( samples.minutes_in_status ) AS \"Unplanned Downtime\"\nFROM \n    v4_4_statistics_vms_resources_usage_samples AS samples\n    INNER JOIN v4_4_configuration_history_vms\n        ON \n            (\n                v4_4_configuration_history_vms.vm_id = samples.vm_id\n                AND delete_date ISNULL\n                AND v4_4_configuration_history_vms.history_id\n                    IN\n                        (\n                            SELECT MAX (history_id)\n                            FROM v4_4_configuration_history_vms\n                            GROUP BY vm_id\n                        )\n            )\nWHERE\n    history_datetime >= $__timeFrom()\n    AND history_datetime < $__timeTo()\nGROUP BY history_datetime, vm_name",
+          "refId": "A",
+          "select": [
+            [
+              {
+                "params": [
+                  "value"
+                ],
+                "type": "column"
+              }
+            ]
+          ],
+          "timeColumn": "time",
+          "where": [
+            {
+              "name": "$__timeFilter",
+              "params": [],
+              "type": "macro"
+            }
+          ]
+        }
+      ],
+      "thresholds": [
+        {
+          "colorMode": "critical",
+          "fill": true,
+          "line": true,
+          "op": "gt",
+          "value": 98
+        }
+      ],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "Virtual Machines Unplanned Downtime",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "decimals": 1,
+          "format": "percentunit",
+          "label": null,
+          "logBase": 1,
+          "max": "1",
+          "min": "0",
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "datasource": null,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 50
+      },
+      "id": 12,
+      "title": "Storage Domains",
+      "type": "row"
+    },
+    {
+      "alert": {
+        "alertRuleTags": {},
+        "conditions": [
+          {
+            "evaluator": {
+              "params": [
+                85
+              ],
+              "type": "gt"
+            },
+            "operator": {
+              "type": "and"
+            },
+            "query": {
+              "params": [
+                "A",
+                "5m",
+                "now"
+              ]
+            },
+            "reducer": {
+              "params": [],
+              "type": "last"
+            },
+            "type": "query"
+          }
+        ],
+        "executionErrorState": "alerting",
+        "for": "1m",
+        "frequency": "1m",
+        "handler": 1,
+        "message": "The storage domains listed below have a disk usage rate of over 95%!",
+        "name": "Storage Domains Disk Usage (over time) Alert",
+        "noDataState": "no_data",
+        "notifications": []
+      },
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": null,
+      "description": "This report displays the disk usage rate for all storage domains in the data source.",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {},
+          "links": []
+        },
+        "overrides": []
+      },
+      "fill": 1,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 0,
+        "y": 51
+      },
+      "hiddenSeries": false,
+      "id": 18,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "hideEmpty": true,
+        "hideZero": true,
+        "max": false,
+        "min": false,
+        "rightSide": true,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null",
+      "options": {
+        "alertThreshold": true
+      },
+      "percentage": false,
+      "pluginVersion": "7.3.6",
+      "pointradius": 2,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "format": "time_series",
+          "group": [],
+          "metricColumn": "none",
+          "rawQuery": true,
+          "rawSql": "-- This query returns for a storage domain\n-- the disk usage rate per minute.\n\nSELECT DISTINCT\n    $__time(sub_query.history_datetime),\n    COALESCE \n        (\n            storage_domain_name,\n            MAX ( storage_domain_name ) over ( partition BY 1 ),\n            ''\n        ) AS storage_domain_name,\n    used_disk_size / (available_disk_size+used_disk_size) AS disk_usage\nFROM \n    (\n        SELECT\n            v4_4_configuration_history_storage_domains.storage_domain_name,\n            history_datetime,\n            AVG ( available_disk_size_gb ) AS available_disk_size,\n            AVG (used_disk_size_gb) AS used_disk_size\n        FROM\n            (\n                SELECT history_datetime, available_disk_size_gb, storage_domain_id, used_disk_size_gb\n                FROM v4_4_statistics_storage_domains_resources_usage_samples\n            ) AS samples,\n            v4_4_configuration_history_storage_domains\n        WHERE\n            -- Here we join the storage domain configurations table with the statistics table\n            v4_4_configuration_history_storage_domains.storage_domain_id =\n            samples.storage_domain_id\n            AND history_datetime >= $__timeFrom()\n            AND history_datetime < $__timeTo()\n            -- Here we get the latest storage domain configurations\n            AND v4_4_configuration_history_storage_domains.history_id \n                IN \n                    (\n                        SELECT MAX ( a.history_id )\n                        FROM v4_4_configuration_history_storage_domains a\n                        GROUP BY a.storage_domain_id\n                    )\n        GROUP BY\n            v4_4_configuration_history_storage_domains.storage_domain_name,\n            history_datetime\n    ) AS sub_query\nORDER BY sub_query.history_datetime, disk_usage DESC",
+          "refId": "A",
+          "select": [
+            [
+              {
+                "params": [
+                  "value"
+                ],
+                "type": "column"
+              }
+            ]
+          ],
+          "timeColumn": "time",
+          "where": [
+            {
+              "name": "$__timeFilter",
+              "params": [],
+              "type": "macro"
+            }
+          ]
+        }
+      ],
+      "thresholds": [
+        {
+          "colorMode": "critical",
+          "fill": true,
+          "line": true,
+          "op": "gt",
+          "value": 85
+        }
+      ],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "Storage Domains Disk Usage (over time)",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "decimals": 1,
+          "format": "percentunit",
+          "label": "",
+          "logBase": 1,
+          "max": "1",
+          "min": "0",
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": false
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "alert": {
+        "alertRuleTags": {},
+        "conditions": [
+          {
+            "evaluator": {
+              "params": [
+                100
+              ],
+              "type": "lt"
+            },
+            "operator": {
+              "type": "and"
+            },
+            "query": {
+              "params": [
+                "A",
+                "5m",
+                "now"
+              ]
+            },
+            "reducer": {
+              "params": [],
+              "type": "last"
+            },
+            "type": "query"
+          }
+        ],
+        "executionErrorState": "alerting",
+        "for": "1m",
+        "frequency": "1m",
+        "handler": 1,
+        "message": "The storage domains listed below have less than 20 GB available disk size!",
+        "name": "Storage Domains Available Size (over time) Alert",
+        "noDataState": "no_data",
+        "notifications": []
+      },
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": null,
+      "description": "This report displays the available disk size for all storage domains in the data source.",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {},
+          "links": []
+        },
+        "overrides": []
+      },
+      "fill": 1,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 12,
+        "y": 51
+      },
+      "hiddenSeries": false,
+      "id": 26,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "hideEmpty": true,
+        "hideZero": true,
+        "max": false,
+        "min": false,
+        "rightSide": true,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null",
+      "options": {
+        "alertThreshold": true
+      },
+      "percentage": false,
+      "pluginVersion": "7.3.6",
+      "pointradius": 2,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "format": "time_series",
+          "group": [],
+          "metricColumn": "none",
+          "rawQuery": true,
+          "rawSql": "-- This query returns for a storage domain\n-- the disk usage rate per minute.\n\nSELECT DISTINCT\n    $__time(sub_query.history_datetime),\n    COALESCE \n        (\n            storage_domain_name,\n            MAX ( storage_domain_name ) over ( partition BY 1 ),\n            ''\n        ) AS storage_domain_name,\n    available_disk_size\nFROM \n    (\n        SELECT\n            v4_4_configuration_history_storage_domains.storage_domain_name,\n            history_datetime,\n            AVG ( available_disk_size_gb ) AS available_disk_size\n        FROM\n            (\n                SELECT history_datetime, available_disk_size_gb, storage_domain_id\n                FROM v4_4_statistics_storage_domains_resources_usage_samples\n            ) AS samples,\n            v4_4_configuration_history_storage_domains\n        WHERE\n            -- Here we join the storage domain configurations table with the statistics table\n            v4_4_configuration_history_storage_domains.storage_domain_id =\n            samples.storage_domain_id\n            AND history_datetime >= $__timeFrom()\n            AND history_datetime < $__timeTo()\n            -- Here we get the latest storage domain configurations\n            AND v4_4_configuration_history_storage_domains.history_id \n                IN \n                    (\n                        SELECT MAX ( a.history_id )\n                        FROM v4_4_configuration_history_storage_domains a\n                        GROUP BY a.storage_domain_id\n                    )\n        GROUP BY\n            v4_4_configuration_history_storage_domains.storage_domain_name,\n            history_datetime\n    ) AS sub_query\nORDER BY sub_query.history_datetime, available_disk_size DESC",
+          "refId": "A",
+          "select": [
+            [
+              {
+                "params": [
+                  "value"
+                ],
+                "type": "column"
+              }
+            ]
+          ],
+          "timeColumn": "time",
+          "where": [
+            {
+              "name": "$__timeFilter",
+              "params": [],
+              "type": "macro"
+            }
+          ]
+        }
+      ],
+      "thresholds": [
+        {
+          "colorMode": "critical",
+          "fill": true,
+          "line": true,
+          "op": "lt",
+          "value": 100
+        }
+      ],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "Storage Domains Available Size (over time)",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "decimals": 1,
+          "format": "decgbytes",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": "0",
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": false
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    }
+  ],
+  "schemaVersion": 26,
+  "style": "dark",
+  "tags": [
+    "Host",
+    "VM",
+    "CPU",
+    "Memory",
+    "SD",
+    "Disk",
+    "Interface",
+    "Downtime"
+  ],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "now-24h",
+    "to": "now"
+  },
+  "timepicker": {
+    "hidden": true
+  },
+  "timezone": "",
+  "title": "Alerts Dashboard",
+  "uid": "AlertsDashboard",
+  "version": 1
+}
