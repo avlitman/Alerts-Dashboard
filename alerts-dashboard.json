@@ -67,7 +67,7 @@
           {
             "evaluator": {
               "params": [
-                98
+                90
               ],
               "type": "gt"
             },
@@ -92,7 +92,7 @@
         "for": "1m",
         "frequency": "1m",
         "handler": 1,
-        "message": "The hosts listed below have a memory usage rate of over 98%!",
+        "message": "The hosts listed below have a memory usage rate of over 90%!",
         "name": "Hosts Memory Usage (over time) Alert",
         "noDataState": "no_data",
         "notifications": []
@@ -181,7 +181,7 @@
           "fill": true,
           "line": true,
           "op": "gt",
-          "value": 98
+          "value": 90
         }
       ],
       "timeFrom": null,
@@ -232,7 +232,7 @@
           {
             "evaluator": {
               "params": [
-                98
+                90
               ],
               "type": "gt"
             },
@@ -257,7 +257,7 @@
         "for": "1m",
         "frequency": "1m",
         "handler": 1,
-        "message": "The hosts listed below have a CPU usage rate of over 98%!",
+        "message": "The hosts listed below have a CPU usage rate of over 90%!",
         "name": "Hosts CPU Usage (over time) Alert",
         "noDataState": "no_data",
         "notifications": []
@@ -346,7 +346,7 @@
           "fill": true,
           "line": true,
           "op": "gt",
-          "value": 98
+          "value": 90
         }
       ],
       "timeFrom": null,
@@ -1559,7 +1559,7 @@
           {
             "evaluator": {
               "params": [
-                98
+                99
               ],
               "type": "gt"
             },
@@ -1584,7 +1584,7 @@
         "for": "1m",
         "frequency": "1m",
         "handler": 1,
-        "message": "The virtual machines listed below have a unplanned downtime rate of over 95%!",
+        "message": "The virtual machines listed below have a unplanned downtime rate of over 99%!",
         "name": "Virtual Machines Unplanned Downtime Alert",
         "noDataState": "no_data",
         "notifications": []
@@ -1670,7 +1670,7 @@
           "fill": true,
           "line": true,
           "op": "gt",
-          "value": 98
+          "value": 99
         }
       ],
       "timeFrom": null,
@@ -1758,7 +1758,7 @@
         "for": "1m",
         "frequency": "1m",
         "handler": 1,
-        "message": "The storage domains listed below have a disk usage rate of over 95%!",
+        "message": "The storage domains listed below have a disk usage rate of over 85%!",
         "name": "Storage Domains Disk Usage (over time) Alert",
         "noDataState": "no_data",
         "notifications": []
@@ -1875,172 +1875,6 @@
           "label": "",
           "logBase": 1,
           "max": "1",
-          "min": "0",
-          "show": true
-        },
-        {
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": false
-        }
-      ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
-    },
-    {
-      "alert": {
-        "alertRuleTags": {},
-        "conditions": [
-          {
-            "evaluator": {
-              "params": [
-                100
-              ],
-              "type": "lt"
-            },
-            "operator": {
-              "type": "and"
-            },
-            "query": {
-              "params": [
-                "A",
-                "5m",
-                "now"
-              ]
-            },
-            "reducer": {
-              "params": [],
-              "type": "last"
-            },
-            "type": "query"
-          }
-        ],
-        "executionErrorState": "alerting",
-        "for": "1m",
-        "frequency": "1m",
-        "handler": 1,
-        "message": "The storage domains listed below have less than 20 GB available disk size!",
-        "name": "Storage Domains Available Size (over time) Alert",
-        "noDataState": "no_data",
-        "notifications": []
-      },
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
-      "datasource": null,
-      "description": "This report displays the available disk size for all storage domains in the data source.",
-      "fieldConfig": {
-        "defaults": {
-          "custom": {},
-          "links": []
-        },
-        "overrides": []
-      },
-      "fill": 1,
-      "fillGradient": 0,
-      "gridPos": {
-        "h": 7,
-        "w": 12,
-        "x": 12,
-        "y": 51
-      },
-      "hiddenSeries": false,
-      "id": 26,
-      "legend": {
-        "avg": false,
-        "current": false,
-        "hideEmpty": true,
-        "hideZero": true,
-        "max": false,
-        "min": false,
-        "rightSide": true,
-        "show": true,
-        "total": false,
-        "values": false
-      },
-      "lines": true,
-      "linewidth": 1,
-      "links": [],
-      "nullPointMode": "null",
-      "options": {
-        "alertThreshold": true
-      },
-      "percentage": false,
-      "pluginVersion": "7.3.6",
-      "pointradius": 2,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
-      "targets": [
-        {
-          "format": "time_series",
-          "group": [],
-          "metricColumn": "none",
-          "rawQuery": true,
-          "rawSql": "-- This query returns for a storage domain\n-- the disk usage rate per minute.\n\nSELECT DISTINCT\n    $__time(sub_query.history_datetime),\n    COALESCE \n        (\n            storage_domain_name,\n            MAX ( storage_domain_name ) over ( partition BY 1 ),\n            ''\n        ) AS storage_domain_name,\n    available_disk_size\nFROM \n    (\n        SELECT\n            v4_4_configuration_history_storage_domains.storage_domain_name,\n            history_datetime,\n            AVG ( available_disk_size_gb ) AS available_disk_size\n        FROM\n            (\n                SELECT history_datetime, available_disk_size_gb, storage_domain_id\n                FROM v4_4_statistics_storage_domains_resources_usage_samples\n            ) AS samples,\n            v4_4_configuration_history_storage_domains\n        WHERE\n            -- Here we join the storage domain configurations table with the statistics table\n            v4_4_configuration_history_storage_domains.storage_domain_id =\n            samples.storage_domain_id\n            AND history_datetime >= $__timeFrom()\n            AND history_datetime < $__timeTo()\n            -- Here we get the latest storage domain configurations\n            AND v4_4_configuration_history_storage_domains.history_id \n                IN \n                    (\n                        SELECT MAX ( a.history_id )\n                        FROM v4_4_configuration_history_storage_domains a\n                        GROUP BY a.storage_domain_id\n                    )\n        GROUP BY\n            v4_4_configuration_history_storage_domains.storage_domain_name,\n            history_datetime\n    ) AS sub_query\nORDER BY sub_query.history_datetime, available_disk_size DESC",
-          "refId": "A",
-          "select": [
-            [
-              {
-                "params": [
-                  "value"
-                ],
-                "type": "column"
-              }
-            ]
-          ],
-          "timeColumn": "time",
-          "where": [
-            {
-              "name": "$__timeFilter",
-              "params": [],
-              "type": "macro"
-            }
-          ]
-        }
-      ],
-      "thresholds": [
-        {
-          "colorMode": "critical",
-          "fill": true,
-          "line": true,
-          "op": "lt",
-          "value": 100
-        }
-      ],
-      "timeFrom": null,
-      "timeRegions": [],
-      "timeShift": null,
-      "title": "Storage Domains Available Size (over time)",
-      "tooltip": {
-        "shared": true,
-        "sort": 0,
-        "value_type": "individual"
-      },
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "decimals": 1,
-          "format": "decgbytes",
-          "label": null,
-          "logBase": 1,
-          "max": null,
           "min": "0",
           "show": true
         },
